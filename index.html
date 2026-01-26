@@ -9,150 +9,161 @@
         #ad-top, #ad-bottom { position: fixed; left: 0; width: 100%; height: 150px; background: #333; z-index: 100; display: flex; align-items: center; justify-content: center; }
         #ad-top { top: 0; } #ad-bottom { bottom: 0; }
         iframe { border: none; width: 100%; height: 150px; }
-        #main-container { margin-top: 150px; height: calc(100vh - 300px); position: relative; display: flex; flex-direction: column; align-items: center; }
-        #ui { padding: 10px; font-size: 22px; font-weight: bold; color: #ff9800; }
-        #game-area { width: 100%; height: calc(100% - 150px); position: relative; overflow: hidden; } /* 下にバケツがあるため高さを調整 */
+        
+        #main-container { margin-top: 150px; height: calc(100vh - 300px); position: relative; overflow: hidden; display: flex; flex-direction: column; }
+        
+        #header-ui { width: 100%; display: flex; justify-content: space-around; padding: 10px 0; background: rgba(255,255,255,0.5); z-index: 50; }
+        .ui-box { padding: 5px 12px; border-radius: 15px; font-weight: bold; font-size: 18px; color: #e65100; background: white; box-shadow: 0 2px #ffb74d; }
+
+        #game-canvas { flex-grow: 1; position: relative; width: 100%; overflow: hidden; }
+        
         .falling-num { 
-            position: absolute; width: 40px; height: 40px; background: #ffc107; color: white; 
+            position: absolute; width: 50px; height: 50px; background: #ff9800; color: white; 
             border-radius: 50%; display: flex; align-items: center; justify-content: center; 
-            font-size: 20px; font-weight: bold; top: -50px; left: 0; box-shadow: 0 2px #ffb300;
+            font-size: 24px; font-weight: bold; box-shadow: 0 4px #ef6c00;
         }
-        #buckets-container { 
-            position: absolute; bottom: 0; left: 0; width: 100%; height: 80px; 
-            display: flex; justify-content: space-around; background: #795548; padding-top: 5px; box-shadow: 0 -3px #5d4037;
-        }
+
+        #buckets { width: 100%; height: 80px; display: flex; justify-content: space-around; align-items: center; background: #795548; }
         .bucket { 
-            width: 60px; height: 60px; background: #ff9800; color: white; 
-            border-radius: 10px; display: flex; align-items: center; justify-content: center; 
-            font-size: 24px; font-weight: bold; cursor: pointer; box-shadow: 0 4px #ef6c00;
+            width: 22%; height: 60px; background: #ffb74d; color: white; border-radius: 10px; 
+            display: flex; align-items: center; justify-content: center; font-size: 28px; 
+            font-weight: bold; box-shadow: 0 4px #e65100; cursor: pointer;
         }
+
         #end-menu { 
             position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
-            background: rgba(255,255,255,0.95); display: none; flex-direction: column; 
-            align-items: center; justify-content: center; z-index: 60; 
+            background: rgba(255,255,255,0.95); display: flex; flex-direction: column; 
+            align-items: center; justify-content: center; z-index: 100; 
         }
         .menu-btn { width: 220px; padding: 15px; margin: 10px; font-size: 20px; border: none; border-radius: 30px; font-weight: bold; cursor: pointer; text-decoration: none; text-align: center; }
-        #retry-btn { background: #ff9800; color: white; }
-        #more-games-btn { background: #ff4081; color: white; }
+        #retry-btn { background: #ff9800; color: white; box-shadow: 0 5px #e65100; }
+        #more-games-btn { background: #ff4081; color: white; box-shadow: 0 5px #c2185b; }
     </style>
 </head>
 <body>
-    <div id="ad-top"><iframe src="ad.html"></iframe></div>
-    <div id="ad-bottom"><iframe src="ad.html"></iframe></div>
+    <div id="ad-top"><iframe id="frame-top" src="ad.html"></iframe></div>
+    <div id="ad-bottom"><iframe id="frame-bottom" src="ad.html"></iframe></div>
+    
     <div id="main-container">
-        <div id="ui">SCORE: 0</div>
-        <div id="game-area"></div>
-        <div id="buckets-container"></div>
+        <div id="header-ui">
+            <div id="score-display" class="ui-box">SCORE: 0</div>
+            <div id="speed-display" class="ui-box">SPEED: 1</div>
+        </div>
+        
+        <div id="game-canvas"></div>
+
+        <div id="buckets">
+            <div class="bucket" onclick="catchNum(1)">1</div>
+            <div class="bucket" onclick="catchNum(2)">2</div>
+            <div class="bucket" onclick="catchNum(3)">3</div>
+            <div class="bucket" onclick="catchNum(4)">4</div>
+        </div>
+
         <div id="end-menu">
-            <h2 id="result-msg">Bounce Catch</h2>
+            <h2 id="result-msg" style="color:#e65100; text-align:center;">Bounce Catch</h2>
             <button id="retry-btn" class="menu-btn" onclick="startNewGame()">スタート！</button>
             <a href="https://saaaachi.github.io/Color-Shuffle/" id="more-games-btn" class="menu-btn">他のゲームはこちら</a>
         </div>
     </div>
-    <script>
-        let score = 0, gameActive = false, fallingInterval, fallSpeed = 20, maxFalling = 3;
-        const gameArea = document.getElementById("game-area");
-        const bucketsContainer = document.getElementById("buckets-container");
-        const numbers = [1, 2, 3, 4]; // 使用する数字
 
-        let activeFallingNums = [];
+    <script>
+        let score = 0, gameActive = false, gameLoop, spawnTimer;
+        let speed = 2, spawnRate = 2000;
+        const canvas = document.getElementById("game-canvas");
+        const nums = [];
 
         function startNewGame() {
             document.getElementById("end-menu").style.display = "none";
-            score = 0; gameActive = true;
-            document.getElementById("ui").innerText = "SCORE: 0";
-            gameArea.innerHTML = "";
-            activeFallingNums = [];
-            fallSpeed = 20; maxFalling = 3; // 初期設定に戻す
-            createBuckets();
-            startFalling();
+            score = 0; speed = 3; spawnRate = 1800; gameActive = true;
+            nums.forEach(n => n.el.remove());
+            nums.length = 0;
+            updateUI();
+            
+            clearInterval(gameLoop);
+            clearTimeout(spawnTimer);
+            
+            gameLoop = setInterval(update, 20);
+            spawn();
         }
 
-        function createBuckets() {
-            bucketsContainer.innerHTML = "";
-            numbers.forEach(num => {
-                const bucket = document.createElement("div");
-                bucket.className = "bucket";
-                bucket.innerText = num;
-                bucket.onclick = () => catchNum(num);
-                bucketsContainer.appendChild(bucket);
-            });
-        }
-
-        function startFalling() {
-            clearInterval(fallingInterval);
-            fallingInterval = setInterval(() => {
-                if(activeFallingNums.length < maxFalling) {
-                    spawnFallingNum();
-                }
-                moveFallingNums();
-            }, fallSpeed);
-        }
-
-        function spawnFallingNum() {
-            const num = numbers[Math.floor(Math.random() * numbers.length)];
-            const falling = document.createElement("div");
-            falling.className = "falling-num";
-            falling.innerText = num;
-            falling.dataset.value = num;
-            falling.style.left = Math.random() * (gameArea.offsetWidth - 40) + "px";
-            gameArea.appendChild(falling);
-            activeFallingNums.push(falling);
-        }
-
-        function moveFallingNums() {
-            const bucketTop = bucketsContainer.offsetTop;
-            activeFallingNums.forEach((falling, index) => {
-                let currentTop = parseInt(falling.style.top);
-                falling.style.top = (currentTop + 5) + "px"; // 落下速度
-                if (currentTop + 40 > bucketTop) { // バケツの高さに到達したら
-                    // バケツでキャッチされなかった場合はミス
-                    gameOver(`取り逃がした！\nSCORE: ${score}`);
-                }
-            });
-            // 画面外に出てしまった（ミスでゲームオーバーになるので基本的にここには来ない）
-            activeFallingNums = activeFallingNums.filter(f => parseInt(f.style.top) < gameArea.offsetHeight);
-        }
-
-        function catchNum(bucketNum) {
+        function spawn() {
             if(!gameActive) return;
-            // 一番下にある数字を探す（一番落下しているもの）
-            let caught = null;
-            let lowestTop = -1;
-            activeFallingNums.forEach(f => {
-                const currentTop = parseInt(f.style.top);
-                if (currentTop > lowestTop && currentTop + 40 > bucketsContainer.offsetTop - 50 ) { // バケツの少し上まで来ているもの
-                    lowestTop = currentTop;
-                    caught = f;
-                }
-            });
+            const val = Math.floor(Math.random() * 4) + 1;
+            const el = document.createElement("div");
+            el.className = "falling-num";
+            el.innerText = val;
+            el.style.left = Math.random() * (canvas.offsetWidth - 60) + "px";
+            el.style.top = "-60px";
+            canvas.appendChild(el);
+            nums.push({ el, val, y: -60 });
 
-            if (caught && parseInt(caught.dataset.value) === bucketNum) {
-                score++;
-                document.getElementById("ui").innerText = "SCORE: " + score;
-                caught.remove();
-                activeFallingNums = activeFallingNums.filter(f => f !== caught);
-                
-                // 難易度調整
-                if(score % 5 === 0) { // 5点ごとに難易度アップ
-                    if(fallSpeed > 5) fallSpeed -= 1; // 落下速度アップ
-                    if(maxFalling < 8) maxFalling++; // 同時落下数増加
-                    startFalling(); // インターバルを更新
+            // 次のスポーンを予約（スコアが上がると早くなる）
+            const nextSpawn = Math.max(600, spawnRate - (score * 20));
+            spawnTimer = setTimeout(spawn, nextSpawn);
+        }
+
+        function update() {
+            if(!gameActive) return;
+            for(let i = nums.length - 1; i >= 0; i--) {
+                nums[i].y += speed + (score * 0.05);
+                nums[i].el.style.top = nums[i].y + "px";
+
+                // 地面に到達（ミス）
+                if(nums[i].y > canvas.offsetHeight) {
+                    gameOver("見逃した！😱");
+                    break;
                 }
-            } else if (caught && parseInt(caught.dataset.value) !== bucketNum) {
-                gameOver(`数字が違うよ！\nSCORE: ${score}`);
             }
+        }
+
+        function catchNum(val) {
+            if(!gameActive) return;
+            // 一番下にある数字を判定対象にする
+            let targetIdx = -1;
+            let lowestY = -1;
+
+            for(let i = 0; i < nums.length; i++) {
+                if(nums[i].y > lowestY) {
+                    lowestY = nums[i].y;
+                    targetIdx = i;
+                }
+            }
+
+            if(targetIdx !== -1) {
+                if(nums[targetIdx].val === val) {
+                    // 正解
+                    score++;
+                    nums[targetIdx].el.remove();
+                    nums.splice(targetIdx, 1);
+                    updateUI();
+                } else {
+                    // お手つき
+                    gameOver("ちがう数字だよ！❌");
+                }
+            }
+        }
+
+        function updateUI() {
+            document.getElementById("score-display").innerText = "SCORE: " + score;
+            document.getElementById("speed-display").innerText = "SPEED: " + (speed + (score * 0.05)).toFixed(1);
         }
 
         function gameOver(msg) {
             gameActive = false;
-            clearInterval(fallingInterval);
-            document.getElementById("result-msg").innerText = msg;
+            clearInterval(gameLoop);
+            clearTimeout(spawnTimer);
+            document.getElementById("result-msg").innerText = msg + "\nSCORE: " + score;
             document.getElementById("end-menu").style.display = "flex";
             document.getElementById("retry-btn").innerText = "もう一度遊ぶ";
         }
+
+        function refreshAds() {
+            document.getElementById('frame-top').src += "";
+            document.getElementById('frame-bottom').src += "";
+        }
+        setInterval(refreshAds, 30000);
+
         window.onload = () => { document.getElementById("end-menu").style.display = "flex"; };
-        setInterval(() => { const fs = document.querySelectorAll('iframe'); fs.forEach(f => { const s = f.src; f.src = "about:blank"; setTimeout(() => f.src = s, 100); }); }, 30000);
     </script>
 </body>
 </html>
