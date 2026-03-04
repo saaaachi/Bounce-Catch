@@ -250,19 +250,6 @@
             document.getElementById("ad-large-frame").src = "";
         }
 
-        // 30秒ごとに上下広告を交互にリフレッシュ
-        setInterval(() => {
-            const f = document.getElementById('frame-top');
-            if(f) f.src = "ad.html?pos=top&t=" + Date.now();
-        }, 30000);
-        
-        setTimeout(() => {
-            setInterval(() => {
-                const f = document.getElementById('frame-bottom');
-                if(f) f.src = "ad.html?pos=bottom&t=" + Date.now();
-            }, 30000);
-        }, 15000);
-
         window.onload = () => { menuScreen.style.display = "flex"; };
     </script>
 </body>
