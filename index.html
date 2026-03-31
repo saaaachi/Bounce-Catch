@@ -3,139 +3,134 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Bounce Catch - 第35弾</title>
+    <title>Bounce Catch - Number Action</title>
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1299640300068792" crossorigin="anonymous"></script>
     <style>
-        * { box-sizing: border-box; }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         html, body { margin: 0; padding: 0; overflow: hidden; width: 100%; height: 100%; position: fixed; touch-action: none; }
-        body { background: #fff3e0; font-family: sans-serif; display: flex; flex-direction: column; }
+        body { background: #fff3e0; font-family: 'Hiragino Sans', 'Meiryo', sans-serif; display: flex; flex-direction: column; }
         
-        /* 上下広告：100px */
-        #ad-top, #ad-bottom { width: 100%; height: 100px; background: #333; display: flex; align-items: center; justify-content: center; flex-shrink: 0; z-index: 100; position: relative; }
-        iframe { border: none; width: 100%; height: 100%; background: #333; }
+        /* 上部広告：100px 固定 */
+        #ad-top { width: 100%; height: 100px; background: #263238; display: flex; align-items: center; justify-content: center; flex-shrink: 0; z-index: 100; border-bottom: 3px solid #ff9800; }
 
-        /* ゲーム本体エリア */
+        /* ゲームエリア */
         #game-outer { flex-grow: 1; position: relative; width: 100%; background: #fff3e0; overflow: hidden; display: flex; flex-direction: column; }
         
-        #header-ui { width: 100%; display: flex; justify-content: space-around; padding: 8px 0; background: rgba(255,255,255,0.5); z-index: 10; flex-shrink: 0; }
-        .ui-box { padding: 4px 10px; border-radius: 12px; font-weight: bold; font-size: 16px; color: #e65100; background: white; box-shadow: 0 2px #ffb74d; }
+        #header-ui { 
+            position: absolute; top: 0; width: 100%; display: flex; justify-content: space-around; 
+            padding: 10px 0; background: rgba(255,255,255,0.7); z-index: 10; 
+        }
+        .ui-box { padding: 5px 15px; border-radius: 20px; font-weight: bold; font-size: 18px; color: #e65100; background: white; box-shadow: 0 3px #ffb74d; }
 
         #game-canvas { flex-grow: 1; position: relative; width: 100%; overflow: hidden; }
         
         .falling-num { 
-            position: absolute; width: 45px; height: 45px; background: #ff9800; color: white; 
+            position: absolute; width: 50px; height: 50px; background: #ff9800; color: white; 
             border-radius: 50%; display: flex; align-items: center; justify-content: center; 
-            font-size: 22px; font-weight: bold; box-shadow: 0 4px #ef6c00;
-            user-select: none;
+            font-size: 24px; font-weight: bold; box-shadow: 0 4px #ef6c00;
+            user-select: none; pointer-events: none;
         }
 
         /* 操作ボタンエリア */
-        #buckets { width: 100%; height: 70px; display: flex; justify-content: space-around; align-items: center; background: #795548; flex-shrink: 0; }
+        #buckets { width: 100%; height: 85px; display: flex; justify-content: space-around; align-items: center; background: #5d4037; flex-shrink: 0; padding: 0 5px; }
         .bucket { 
-            width: 22%; height: 55px; background: #ffb74d; color: white; border-radius: 10px; 
-            display: flex; align-items: center; justify-content: center; font-size: 24px; 
-            font-weight: bold; box-shadow: 0 4px #e65100; cursor: pointer;
-            touch-action: none; user-select: none;
+            width: 23%; height: 65px; background: #ffb74d; color: white; border-radius: 12px; 
+            display: flex; align-items: center; justify-content: center; font-size: 28px; 
+            font-weight: bold; box-shadow: 0 5px #e65100; cursor: pointer;
         }
-        .bucket:active { transform: translateY(2px); box-shadow: 0 2px #e65100; }
+        .bucket:active { transform: translateY(3px); box-shadow: 0 2px #e65100; }
 
         /* メニュー画面 */
         #menuScreen { 
             position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
-            background: rgba(255,255,255,0.96); display: flex; flex-direction: column; 
-            align-items: center; justify-content: center; z-index: 200; 
-            padding: 20px 0;
+            background: rgba(255,255,255,0.97); display: flex; flex-direction: column; 
+            align-items: center; justify-content: center; z-index: 500; padding: 20px; 
         }
 
-        /* 中央広告 */
-        #ad-middle-container { 
-            width: 320px; height: 100px; background: rgba(0,0,0,0.05); 
-            margin: 15px 0; display: none; justify-content: center; align-items: center; 
-            overflow: hidden; flex-shrink: 0; border: 1px solid #ffb74d; transition: opacity 0.3s;
+        /* 【収益】300x250 レクタングル */
+        #ad-middle-box {
+            width: 300px; height: 250px; background: #f5f5f5;
+            margin: 15px 0; display: none; justify-content: center; align-items: center;
+            border-radius: 12px; border: 1px solid #ffe0b2; overflow: hidden;
         }
 
-        .menu-btn-group { display: flex; flex-direction: column; align-items: center; width: 100%; gap: 12px; }
-        .menu-btn { width: 260px; padding: 15px; font-size: 18px; border: none; border-radius: 50px; font-weight: bold; cursor: pointer; text-decoration: none; text-align: center; transition: 0.2s; }
-        #retry-btn { background: #ff9800; color: white; box-shadow: 0 4px #e65100; }
-        #retry-btn:disabled { background: #ccc; box-shadow: none; opacity: 0.7; color: #666; }
-        #more-games-btn { background: #ff4081; color: white; box-shadow: 0 4px #c2185b; }
+        .menu-btn-group { display: flex; flex-direction: column; align-items: center; width: 100%; gap: 15px; }
+        .menu-btn { width: 270px; padding: 18px; font-size: 20px; border: none; border-radius: 50px; font-weight: bold; cursor: pointer; text-decoration: none; text-align: center; transition: 0.2s; }
+        #retry-btn { background: #ff9800; color: white; box-shadow: 0 5px #e65100; }
+        #retry-btn:disabled { background: #ccc; box-shadow: none; color: #888; }
+        .sub-btn { background: #ff4081; color: white; box-shadow: 0 5px #c2185b; font-size: 16px; }
 
-        /* 大広告 */
-        #bigAdScreen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 3000; display: none; justify-content: center; align-items: center; }
-        .ad-frame-wrapper { width: 95%; height: 85%; position: relative; }
-        .ad-close-btn { position: absolute; top: -15px; right: -15px; color: white; font-size: 22px; font-weight: bold; cursor: pointer; background: rgba(0,0,0,0.8); width: 44px; height: 44px; border-radius: 50%; display: none; align-items: center; justify-content: center; z-index: 3100; border: 2px solid white; }
+        /* インタースティシャル広告用 */
+        #inter-screen { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.98); z-index: 99999; align-items: center; justify-content: center; }
+        .inter-content { width: 330px; height: 350px; background: #fff; position: relative; border-radius: 15px; }
+        #close-ad-btn { position: absolute; top: -55px; right: 0; width: 45px; height: 45px; background: #333; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 24px; border: 2px solid #fff; cursor: pointer; }
     </style>
 </head>
 <body oncontextmenu="return false;">
 
-    <div id="ad-top"><iframe id="frame-top" src="ad.html?pos=top"></iframe></div>
+    <div id="ad-top">
+        <ins class="adsbygoogle" style="display:inline-block;width:320px;height:100px" data-ad-client="ca-pub-1299640300068792" data-ad-slot="3972022911"></ins>
+        <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+    </div>
 
     <div id="game-outer">
-        <div id="header-ui" style="display:none;">
+        <div id="header-ui">
             <div id="score-display" class="ui-box">SCORE: 0</div>
-            <div id="speed-display" class="ui-box">SPEED: 1</div>
+            <div id="speed-display" class="ui-box">SPEED: 1.0</div>
         </div>
         
         <div id="game-canvas"></div>
 
         <div id="buckets">
-            <div class="bucket" onclick="catchNum(1)">1</div>
-            <div class="bucket" onclick="catchNum(2)">2</div>
-            <div class="bucket" onclick="catchNum(3)">3</div>
-            <div class="bucket" onclick="catchNum(4)">4</div>
+            <div class="bucket" onpointerdown="catchNum(1)">1</div>
+            <div class="bucket" onpointerdown="catchNum(2)">2</div>
+            <div class="bucket" onpointerdown="catchNum(3)">3</div>
+            <div class="bucket" onpointerdown="catchNum(4)">4</div>
         </div>
 
         <div id="menuScreen">
-            <div style="text-align:center;">
-                <h2 id="result-msg" style="color:#e65100; margin: 0; font-size: 32px;">Bounce Catch</h2>
-                <p id="menu-desc" style="margin:5px 0; font-size: 16px; color: #666;">数字をタップしてキャッチ！</p>
-            </div>
+            <h2 id="result-msg" style="color:#e65100; margin: 5px 0; font-size: 32px;">Bounce Catch</h2>
+            <p id="menu-desc" style="margin:5px 0; font-size: 16px; color: #666; font-weight: bold; text-align: center; line-height: 1.4;">落ちてくる数字と同じ番号を<br>素早くタップしてキャッチ！</p>
             
-            <div id="ad-middle-container">
-                <div id="im-857ade7f9e284af080ed831644ffde78">
-                    <script async src="https://imp-adedge.i-mobile.co.jp/script/v1/spot.js?20220104"></script>
-                    <script>(window.adsbyimobile=window.adsbyimobile||[]).push({pid:84561,mid:590804,asid:1924331,type:"banner",display:"inline",elementid:"im-857ade7f9e284af080ed831644ffde78"})</script>
-                </div>
+            <div id="ad-middle-box">
+                <ins class="adsbygoogle" style="display:inline-block;width:300px;height:250px" data-ad-client="ca-pub-1299640300068792" data-ad-slot="9050127185"></ins>
+                <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
             </div>
 
             <div class="menu-btn-group">
                 <button id="retry-btn" class="menu-btn" onclick="startNewGame()">★ スタート！ ★</button>
-                <a href="https://saaaachi.github.io/" id="more-games-btn" class="menu-btn">他のゲームへ</a>
+                <a href="https://saaaachi.github.io/" class="sub-btn menu-btn">他のゲームで遊ぶ</a>
             </div>
         </div>
 
-        <div id="bigAdScreen">
-            <div class="ad-frame-wrapper">
-                <div id="ad-close-btn" class="ad-close-btn" onclick="closeBigAd()"></div>
-                <iframe id="ad-large-frame" src="" style="width:100%; height:100%; border:none;"></iframe>
+        <div id="inter-screen">
+            <div class="inter-content">
+                <div id="close-ad-btn" onclick="closeInterAd()">5</div>
+                <iframe id="ifr-inter" src="about:blank" style="width:100%; height:100%; border:none; border-radius:15px;"></iframe>
             </div>
         </div>
     </div>
 
-    <div id="ad-bottom"><iframe id="frame-bottom" src="ad.html?pos=bottom"></iframe></div>
-
     <script>
         let score = 0, gameActive = false, gameLoop, spawnTimer, playCount = 0;
-        let speed = 2, spawnRate = 2000;
+        let speed = 3, spawnRate = 1800;
         const canvas = document.getElementById("game-canvas");
         const menuScreen = document.getElementById("menuScreen");
-        const adMid = document.getElementById("ad-middle-container");
+        const adMid = document.getElementById("ad-middle-box");
         const resultMsg = document.getElementById("result-msg");
         const retryBtn = document.getElementById("retry-btn");
-        const uiHeader = document.getElementById("header-ui");
         const nums = [];
 
         function startNewGame() {
             menuScreen.style.display = "none";
             adMid.style.display = "none";
-            uiHeader.style.display = "flex";
-            score = 0; speed = 3; spawnRate = 1800; gameActive = true;
+            score = 0; speed = 3.5; spawnRate = 1800; gameActive = true;
             nums.forEach(n => n.el.remove());
             nums.length = 0;
             updateUI();
             
             clearInterval(gameLoop);
             clearTimeout(spawnTimer);
-            
             gameLoop = setInterval(update, 20);
             spawn();
         }
@@ -146,23 +141,23 @@
             const el = document.createElement("div");
             el.className = "falling-num";
             el.innerText = val;
-            el.style.left = Math.random() * (canvas.offsetWidth - 50) + "px";
-            el.style.top = "-50px";
+            el.style.left = Math.random() * (canvas.offsetWidth - 55) + "px";
+            el.style.top = "-60px";
             canvas.appendChild(el);
-            nums.push({ el, val, y: -50 });
+            nums.push({ el, val, y: -60 });
 
-            const nextSpawn = Math.max(600, spawnRate - (score * 20));
+            const nextSpawn = Math.max(700, spawnRate - (score * 25));
             spawnTimer = setTimeout(spawn, nextSpawn);
         }
 
         function update() {
             if(!gameActive) return;
             for(let i = nums.length - 1; i >= 0; i--) {
-                nums[i].y += speed + (score * 0.05);
+                nums[i].y += speed + (score * 0.04);
                 nums[i].el.style.top = nums[i].y + "px";
 
                 if(nums[i].y > canvas.offsetHeight) {
-                    gameOver("見逃した！😱");
+                    gameOver("キャッチ失敗！😱");
                     break;
                 }
             }
@@ -170,8 +165,9 @@
 
         function catchNum(val) {
             if(!gameActive) return;
+            // 一番下にある数字を探す
             let targetIdx = -1;
-            let lowestY = -1;
+            let lowestY = -999;
 
             for(let i = 0; i < nums.length; i++) {
                 if(nums[i].y > lowestY) {
@@ -194,7 +190,7 @@
 
         function updateUI() {
             document.getElementById("score-display").innerText = "SCORE: " + score;
-            document.getElementById("speed-display").innerText = "SPEED: " + (speed + (score * 0.05)).toFixed(1);
+            document.getElementById("speed-display").innerText = "SPEED: " + (speed + (score * 0.04)).toFixed(1);
         }
 
         function gameOver(msg) {
@@ -204,50 +200,46 @@
             clearTimeout(spawnTimer);
             
             resultMsg.innerText = "GAME OVER";
-            document.getElementById("menu-desc").innerText = msg + "\nSCORE: " + score;
+            document.getElementById("menu-desc").innerHTML = msg + "<br>SCORE: " + score;
             
             retryBtn.innerText = "お待ちください...";
             retryBtn.disabled = true;
             adMid.style.display = "flex";
-            adMid.style.opacity = "0.4";
             menuScreen.style.display = "flex";
 
-            // 1.5秒後にリトライ可能にする
             setTimeout(() => {
-                adMid.style.opacity = "1";
                 retryBtn.disabled = false;
                 retryBtn.innerText = "もう一度遊ぶ";
             }, 1500);
 
-            // 2回に1回、大広告を表示
-            if (playCount % 2 === 0) {
-                setTimeout(showBigAd, 500);
+            if (playCount % 3 === 0) {
+                setTimeout(showInterAd, 500);
             }
         }
 
-        function showBigAd() {
-            const screen = document.getElementById("bigAdScreen"), closeBtn = document.getElementById("ad-close-btn");
-            document.getElementById("ad-large-frame").src = "./ad.large.html?t=" + Date.now();
+        function showInterAd() {
+            const screen = document.getElementById("inter-screen"), 
+                  closeBtn = document.getElementById("close-ad-btn"), 
+                  ifr = document.getElementById('ifr-inter');
+            ifr.src = './ad.large.html?v=' + Date.now();
             screen.style.display = "flex";
-            let countdown = 5;
-            closeBtn.style.display = "flex";
-            closeBtn.innerText = countdown;
+            let count = 5;
+            closeBtn.innerText = count;
             closeBtn.style.pointerEvents = "none";
-            
-            const timerInt = setInterval(() => {
-                countdown--;
-                closeBtn.innerText = countdown;
-                if (countdown <= 0) {
-                    clearInterval(timerInt);
+            const itv = setInterval(() => {
+                count--;
+                if(count > 0) closeBtn.innerText = count;
+                else {
+                    clearInterval(itv);
                     closeBtn.innerText = "×";
                     closeBtn.style.pointerEvents = "auto";
                 }
             }, 1000);
         }
 
-        function closeBigAd() {
-            document.getElementById("bigAdScreen").style.display = "none";
-            document.getElementById("ad-large-frame").src = "";
+        function closeInterAd() {
+            document.getElementById("inter-screen").style.display = "none";
+            document.getElementById('ifr-inter').src = 'about:blank';
         }
 
         window.onload = () => { menuScreen.style.display = "flex"; };
